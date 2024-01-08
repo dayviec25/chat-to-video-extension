@@ -9,7 +9,7 @@ COPY python-service/ .
 
 # Install dependencies in a virtual environment to make it easy to copy them later
 RUN python -m venv /usr/src/python-service/venv
-ENV PATH="/usr/src/app/venv/bin:$PATH"
+ENV PATH="/usr/src/python-service/venv/bin:$PATH"
 
 # Install build dependencies
 RUN apt-get update \
@@ -29,7 +29,7 @@ WORKDIR /home/appuser
 USER appuser
 
 # Copy the virtual environment with all the dependencies from the builder stage
-COPY --from=builder /usr/src/app/venv /home/appuser/venv
+COPY --from=builder /usr/src/python-service/venv /home/appuser/venv
 ENV PATH="/home/appuser/venv/bin:$PATH"
 
 # Copy the application code to the container
