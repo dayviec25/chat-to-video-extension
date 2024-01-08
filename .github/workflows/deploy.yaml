@@ -20,19 +20,19 @@ jobs:
         with:
           token: ${{ secrets.DIGITALOCEAN_ACCESS_TOKEN }}
 
-      - name: Log in to DO Container Registry
+      - name: Log in to DO  Registry
         run: doctl registry login --expiry-seconds 3600
 
       - name: Tag image
-        run: docker tag chat-to-video-service registry.digitalocean.com/my-docker-registry/my-flask-app:latest
+        run: docker tag chat-to-video-service registry.digitalocean.com/eureka-ai-app/chat-to-video-service:latest
 
       - name: Push Docker Image and Capture Errors
-        run: docker push registry.digitalocean.com/my-docker-registry/chat-to-video-service:latest
+        run: docker push registry.digitalocean.com/eureka-ai-app/chat-to-video-service:latest
 
       - name: Clean up old images in the registry
         run: |
           #!/bin/bash
-          REPOSITORY="my-docker-registry"
+          REPOSITORY="eureka-ai-app"
           untagged_manifests=$(doctl registry repository list-manifests $REPOSITORY --format "Digest,Tag" --no-header | awk '$2 == "" {print $1}')
           for manifest in $untagged_manifests; do
             echo "Deleting untagged manifest: $manifest"
@@ -47,7 +47,7 @@ jobs:
           key: ${{ secrets.SSH_KEY }}
           passphrase: ${{ secrets.SSH_PASSPHRASE }}
           script: |
-            docker pull registry.digitalocean.com/my-docker-registry/chat-to-video-service:latest
-            docker stop chat-to-video-service-container || true
-            docker rm chat-to-video-service-container || true
-            docker run -d --name chat-to-video-service-container -p 8080:5000 registry.digitalocean.com/my-docker-registry/my-flask-app:latest
+            docker pull registry.digitalocean.com/eureka-ai-app/chat-to-video-service:latest
+            docker stop chat-to-video-service- || true
+            docker rm chat-to-video-service- || true
+            docker run -d --name chat-to-video-service- -p 8080:5000 registry.digitalocean.com/eureka-ai-app/chat-to-video-service:latest
