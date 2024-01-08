@@ -41,6 +41,6 @@ jobs:
           passphrase: ${{ secrets.SSH_PASSPHRASE }}
           script: |
             docker pull registry.digitalocean.com/eureka-ai-app/chat-to-video-service:latest
-            docker stop chat-to-video-service- || true
-            docker rm chat-to-video-service- || true
-            docker run -d --name chat-to-video-service- -p 5000:5000 registry.digitalocean.com/eureka-ai-app/chat-to-video-service:latest
+            docker stop chat-to-video-service || true
+            docker rm chat-to-video-service || true
+            docker run -d --name chat-to-video-service -p 5000:5000 registry.digitalocean.com/eureka-ai-app/chat-to-video-service:latest
