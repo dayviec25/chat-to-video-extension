@@ -55,13 +55,18 @@ def query_mistral_llm(transcript, user_query):
     Queries the Mistral LLM with the transcript and user query.
 
     Args:
-        transcript (str): The video transcript.
+        transcript (list): The video transcript.
         user_query (str): The user's query.
 
     Returns:
         str: The response from the LLM.
     """
-    prompt = "Context: You are a video chat bot and video guide for users. Answer anything about the video to the best of your knowledge. Transcript: " + transcript + " Question: " + user_query
+    # Convert the transcript list to a string
+    transcript_str = ' '.join([segment['text'] for segment in transcript])
+
+    prompt = ("Context: You are a video chat bot and video guide for users. "
+              "Answer anything about the video to the best of your knowledge. "
+              "Transcript: " + transcript_str + " Question: " + user_query)
     payload = {"model": "mistral", "prompt": prompt, "stream": False}
 
     try:
