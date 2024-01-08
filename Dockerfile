@@ -16,8 +16,8 @@ RUN apt-get update \
     && apt-get install -y --no-install-recommends gcc libc-dev
 
 # Copy the requirements file and install Python dependencies
-COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+COPY python-service/requirements.txt .
+RUN pip3 install --no-cache-dir -r requirements.txt
 
 # Step 2: Build the final, lean production image
 # Start with a clean, minimal base image
