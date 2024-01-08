@@ -12,27 +12,13 @@ def fetch_youtube_transcript(video_id):
     try:
         transcript_list = YouTubeTranscriptApi.list_transcripts(video_id)
         transcript = transcript_list.find_generated_transcript(['en'])
+        logging.warning(f"{transcript.fetch()}")
         return transcript.fetch()
     except NoTranscriptFound:
         logging.warning(f"No transcript found for video: {video_id}")
         return None
 
 # RESTful API endpoints
-@app.route('/transcript', methods=['POST'])
-def get_transcript():
-    content = request.json
-    video_id = content.get("video_id")
-
-    if not video_id:
-        return jsonify({"error": "No video ID provided"}), 400
-    if not reterieve_transcript_from_db(video_id) is None:
-        transcript = fetch_youtube_transcript(video_id)
-        save_transcript_to_db(video_id, transcript)
-    if transcript is None:
-        return jsonify({"error": "Transcript not found"}), 404
-
-    return jsonify({"transcript": transcript})
-
 @app.route('/chat', methods=['POST'])
 def chat_with_video_content():
     content = request.json
@@ -51,7 +37,7 @@ def chat_with_video_content():
     return jsonify({"response": llm_response})
 
 def query_mistral_llm(transcript, user_query):
-    prompt = "Context: You are a video chat bot and video guide for users and answer anything about the video to the best of your knowledge. You will be provided the transcript and a question from the user of the video. Transcript: " + transcript + "Question: " + user_query + "\nResponse: 
+    prompt = "Context: You are a video chat bot and video guide for users and answer anything about the video to the best of your knowledge. You will be provided the transcript and a question from the user of the video. Transcript: " + transcript + "Question: " + user_query;
     payload = { "model": "mistral", "prompt": prompt, "stream": False }
     response = requests.post("http://localhost:11434/api/generate", json=payload)
     return response.text

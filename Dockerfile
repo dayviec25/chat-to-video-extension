@@ -1,13 +1,15 @@
-FROM python:3.9-slim
+FROM python:3.12-slim
 
 # Set a working directory
 WORKDIR /app
 
+# Create a virtual environment and activate it
+RUN python -m venv /home/appuser/venv
+ENV PATH="/home/appuser/venv/bin:$PATH"
+
 COPY python-service/ .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Expose the port the app runs on
 EXPOSE 5000
 
-# Run the application
-CMD ["gunicorn", "-b", "0.0.0.0:5000", "main:app"]
+CMD ["/home/appuser/venv/bin/gunicorn", "-b", "0.0.0.0:5000", "main:app"]
