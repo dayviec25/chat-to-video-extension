@@ -11,24 +11,18 @@ jobs:
     steps:
       - name: Checkout the repo
         uses: actions/checkout@v2
-
       - name: Build Image
         run: docker build -t chat-to-video-service .
-
       - name: Install doctl
         uses: digitalocean/action-doctl@v2
         with:
           token: ${{ secrets.DIGITALOCEAN_ACCESS_TOKEN }}
-
       - name: Log in to DO  Registry
         run: doctl registry login --expiry-seconds 3600
-
       - name: Tag image
         run: docker tag chat-to-video-service registry.digitalocean.com/eureka-ai-app/chat-to-video-service:latest
-
       - name: Push Docker Image and Capture Errors
         run: docker push registry.digitalocean.com/eureka-ai-app/chat-to-video-service:latest
-
       - name: Clean up old images in the registry
         run: |
           #!/bin/bash
@@ -38,7 +32,6 @@ jobs:
             echo "Deleting untagged manifest: $manifest"
             doctl registry repository delete-manifest $REPOSITORY $manifest --force
           done
-
       - name: Deploy to DigitalOcean Droplet
         uses: appleboy/ssh-action@master
         with:
