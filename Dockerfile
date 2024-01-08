@@ -3,7 +3,9 @@
 FROM python:3.9-slim as builder
 
 # Set a working directory
-WORKDIR /usr/src/app
+WORKDIR /usr/src/python-service
+
+COPY python-service/ .
 
 # Install dependencies in a virtual environment to make it easy to copy them later
 RUN python -m venv /usr/src/app/venv
