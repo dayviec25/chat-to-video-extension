@@ -1,0 +1,53 @@
+name: Deploy Chat to Video APIService to DigitalOcean
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout the repo
+        uses: actions/checkout@v2
+
+      - name: Build Image
+        run: docker build -t chat-to-video-service .
+
+      - name: Install doctl
+        uses: digitalocean/action-doctl@v2
+        with:
+          token: ${{ secrets.DIGITALOCEAN_ACCESS_TOKEN }}
+
+      - name: Log in to DO Container Registry
+        run: doctl registry login --expiry-seconds 3600
+
+      - name: Tag image
+        run: docker tag chat-to-video-service registry.digitalocean.com/my-docker-registry/my-flask-app:latest
+
+      - name: Push Docker Image and Capture Errors
+        run: docker push registry.digitalocean.com/my-docker-registry/chat-to-video-service:latest
+
+      - name: Clean up old images in the registry
+        run: |
+          #!/bin/bash
+          REPOSITORY="my-docker-registry"
+          untagged_manifests=$(doctl registry repository list-manifests $REPOSITORY --format "Digest,Tag" --no-header | awk '$2 == "" {print $1}')
+          for manifest in $untagged_manifests; do
+            echo "Deleting untagged manifest: $manifest"
+            doctl registry repository delete-manifest $REPOSITORY $manifest --force
+          done
+
+      - name: Deploy to DigitalOcean Droplet
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.DROPLET_IP }}
+          username: ${{ secrets.DROPLET_USER }}
+          key: ${{ secrets.SSH_KEY }}
+          passphrase: ${{ secrets.SSH_PASSPHRASE }}
+          script: |
+            docker pull registry.digitalocean.com/my-docker-registry/chat-to-video-service:latest
+            docker stop chat-to-video-service-container || true
+            docker rm chat-to-video-service-container || true
+            docker run -d --name chat-to-video-service-container -p 8080:5000 registry.digitalocean.com/my-docker-registry/my-flask-app:latest

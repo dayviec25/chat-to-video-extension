@@ -1,0 +1,26 @@
+{
+  "manifest_version": 2,
+  "name": "YouTube Caption Viewer",
+  "description": "Displays closed captions from YouTube videos.",
+  "version": "1.0",
+  "permissions": ["activeTab", "https://www.youtube.com/*"],
+  "content_scripts": [
+    {
+      "matches": ["*://*.youtube.com/*"],
+      "js": ["content.js"]
+    }
+  ],
+  "browser_action": {
+    "default_popup": "popup.html",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "48": "icons/icon48.png",
+      "128": "icons/icon128.png"
+    }
+  },
+  "icons": {
+    "16": "icons/icon16.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  }
+}

@@ -1,0 +1,17 @@
+syntax = "proto3";
+
+package main;
+
+option go_package = "./;main";
+
+service VideoService {
+    rpc CheckVideo(VideoRequest) returns (VideoResponse) {}
+}
+
+message VideoRequest {
+    string videoId = 1;
+}
+
+message VideoResponse {
+    bool exists = 1;
+}

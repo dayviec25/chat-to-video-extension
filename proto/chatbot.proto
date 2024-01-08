@@ -1,0 +1,16 @@
+syntax = "proto3";
+
+package chatbot;
+
+service ChatbotService {
+  // Bi-directional streaming RPC for chat
+  rpc Chat(stream UserMessage) returns (stream ChatbotResponse);
+}
+
+message UserMessage {
+  string message = 1;
+}
+
+message ChatbotResponse {
+  string response = 1;
+}
