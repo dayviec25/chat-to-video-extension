@@ -1,4 +1,5 @@
 import logging
+import requests
 from flask import Flask, jsonify, request
 from youtube_transcript_api import YouTubeTranscriptApi, NoTranscriptFound
 
@@ -9,18 +10,32 @@ logging.basicConfig(level=logging.INFO)
 app = Flask(__name__)
 
 def fetch_youtube_transcript(video_id):
+    """
+    Fetches the transcript for a given YouTube video ID.
+
+    Args:
+        video_id (str): The ID of the YouTube video.
+
+    Returns:
+        dict or None: The transcript data if found, otherwise None.
+    """
     try:
         transcript_list = YouTubeTranscriptApi.list_transcripts(video_id)
         transcript = transcript_list.find_generated_transcript(['en'])
-        logging.warning(f"{transcript.fetch()}")
+        logging.info(f"Transcript fetched for video: {video_id}")
         return transcript.fetch()
     except NoTranscriptFound:
         logging.warning(f"No transcript found for video: {video_id}")
         return None
 
-# RESTful API endpoints
 @app.route('/chat', methods=['POST'])
 def chat_with_video_content():
+    """
+    Endpoint to chat with video content. Expects a JSON payload with 'video_id' and 'message'.
+
+    Returns:
+        Flask Response: JSON response with the result or error message.
+    """
     content = request.json
     video_id = content.get("video_id")
     user_query = content.get("message")
@@ -28,8 +43,7 @@ def chat_with_video_content():
     if not video_id or not user_query:
         return jsonify({"error": "Missing video ID or message"}), 400
 
-    # transcript = retrieve_transcript_from_db(video_id)
-    transcript = get_transcript(video_id)['transcript']
+    transcript = fetch_youtube_transcript(video_id)
     if transcript is None:
         return jsonify({"error": "Transcript not found"}), 404
 
@@ -37,10 +51,26 @@ def chat_with_video_content():
     return jsonify({"response": llm_response})
 
 def query_mistral_llm(transcript, user_query):
-    prompt = "Context: You are a video chat bot and video guide for users and answer anything about the video to the best of your knowledge. You will be provided the transcript and a question from the user of the video. Transcript: " + transcript + "Question: " + user_query;
-    payload = { "model": "mistral", "prompt": prompt, "stream": False }
-    response = requests.post("http://localhost:11434/api/generate", json=payload)
-    return response.text
+    """
+    Queries the Mistral LLM with the transcript and user query.
+
+    Args:
+        transcript (str): The video transcript.
+        user_query (str): The user's query.
+
+    Returns:
+        str: The response from the LLM.
+    """
+    prompt = "Context: You are a video chat bot and video guide for users. Answer anything about the video to the best of your knowledge. Transcript: " + transcript + " Question: " + user_query
+    payload = {"model": "mistral", "prompt": prompt, "stream": False}
+
+    try:
+        response = requests.post("http://localhost:11434/api/generate", json=payload)
+        response.raise_for_status()
+        return response.text
+    except requests.RequestException as e:
+        logging.error(f"Error querying Mistral LLM: {e}")
+        return "An error occurred while processing the request."
 
 # Run Flask app
 if __name__ == "__main__":
