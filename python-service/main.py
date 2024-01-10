@@ -2,7 +2,8 @@ import logging
 import json
 import threading
 from flask import Flask, request, jsonify
-from flask_socketio import SocketIO, emit
+from flask_socketio import SocketIO
+from flask_cors import CORS
 import requests
 from youtube_transcript_api import YouTubeTranscriptApi, NoTranscriptFound
 
@@ -11,7 +12,8 @@ logging.basicConfig(level=logging.INFO)
 
 # Flask and SocketIO setup
 app = Flask(__name__)
-socketio = SocketIO(app)
+CORS(app)
+socketio = SocketIO(app, cors_allowed_origins="*")
 
 def fetch_youtube_transcript(video_id):
     """
