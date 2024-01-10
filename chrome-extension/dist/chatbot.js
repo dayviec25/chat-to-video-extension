@@ -26,8 +26,15 @@ window.onload = () => {
             }
         }
     };
-    socket.onerror = (error) => {
-        console.error("WebSocket error:", error);
+    socket.onerror = (event) => {
+        console.error("WebSocket error:", event);
+        // Additional logging for debugging
+        if (event instanceof Event) {
+            const errorEvent = event;
+            if (errorEvent.error) {
+                console.error("WebSocket detailed error:", errorEvent.error);
+            }
+        }
     };
     const submitButton = document.getElementById("submitQuery");
     if (submitButton) {
