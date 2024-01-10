@@ -70,7 +70,7 @@ def query_mistral_llm(transcript, user_query):
     payload = {"model": "mistral", "prompt": prompt, "stream": False}
 
     try:
-        response = requests.post("http://172.17.0.1:11434/api/generate", json=payload)
+        response = requests.post("http://host.docker.internal:11434/api/generate", json=payload)
         response.raise_for_status()
         return response.text
     except requests.RequestException as e:
