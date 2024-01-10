@@ -10,10 +10,13 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 // Replace with the WebSocket URL for your chat endpoint
-const SOCKET_ENDPOINT = "wss://dchung.dev/socket.io/?EIO=3&transport=websocket";
+const SOCKET_ENDPOINT = "wss://dchung.dev/socket.io/";
 let socket = null;
 window.onload = () => {
     socket = new WebSocket(SOCKET_ENDPOINT);
+    socket.on("connect", () => {
+        console.log("connected");
+    });
     socket.onopen = () => {
         console.log("WebSocket connection established");
     };

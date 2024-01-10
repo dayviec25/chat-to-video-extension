@@ -1,8 +1,7 @@
 // chatbot.ts
 
 // Replace with the WebSocket URL for your chat endpoint
-const SOCKET_ENDPOINT: string =
-  "wss://dchung.dev/socket.io/?EIO=3&transport=websocket";
+const SOCKET_ENDPOINT: string = "wss://dchung.dev/socket.io/";
 
 let socket: WebSocket | null = null;
 
