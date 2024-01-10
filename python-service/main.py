@@ -99,7 +99,5 @@ def handle_send_message(message):
     threading.Thread(target=query_mistral_llm, args=(transcript, user_query, sid)).start()
 
 if __name__ == "__main__":
-    certfile = '/etc/letsencrypt/live/dchung.dev/fullchain.pem'
-    keyfile = '/etc/letsencrypt/live/dchung.dev/privkey.pem'
-    socketio.run(app, debug=True, host='0.0.0.0', port=5000, keyfile=keyfile, certfile=certfile)
+    socketio.run(app, debug=True, host='0.0.0.0', port=5000)
 
