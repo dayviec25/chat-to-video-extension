@@ -1,79 +1,65 @@
 // chatbot.ts
+import io from "socket.io-client";
 
-// Replace with the WebSocket URL for your chat endpoint
-const SOCKET_ENDPOINT: string = "wss://dchung.dev/socket.io/";
+// Replace with the Socket.IO server URL
+const SOCKET_IO_ENDPOINT: string = "https://dchung.dev/socket.io/";
 
-let socket: WebSocket | null = null;
+let socket: any;
 
 window.onload = (): void => {
-  socket = new WebSocket(SOCKET_ENDPOINT);
+  // Initialize Socket.IO connection
+  socket = io(SOCKET_IO_ENDPOINT);
 
-  socket.onopen = () => {
-    console.log("WebSocket connection established");
-  };
+  socket.on("connect", () => {
+    console.log("Socket.IO connection established");
+  });
 
-  socket.onmessage = (event) => {
-    const data = JSON.parse(event.data);
-    if (data.llm_response) {
-      displayResponse(data.llm_response.data.response);
-      if (data.llm_response.data.done) {
+  // Define the structure of the data expected in llm_response
+  interface LlmResponseData {
+    response: string;
+    done: boolean;
+  }
+
+  socket.on("llm_response", (data: LlmResponseData) => {
+    if (data) {
+      displayMessage(data.response);
+      if (data.done) {
         console.log("Chat completed");
       }
     }
-  };
+  });
 
-  socket.onerror = (event) => {
-    console.error("WebSocket error:", event);
-    // Additional logging for debugging
-    if (event instanceof Event) {
-      const errorEvent = event as Event & { error?: Error };
-      if (errorEvent.error) {
-        console.error("WebSocket detailed error:", errorEvent.error);
-      }
-    }
-  };
+  socket.on("connect_error", (error: any) => {
+    console.error("Socket.IO connection error:", error);
+  });
 
-  const submitButton = document.getElementById("submitQuery");
-  if (submitButton) {
-    submitButton.addEventListener("click", submitQuery);
+  const sendButton = document.getElementById("sendButton");
+  if (sendButton) {
+    sendButton.addEventListener("click", sendMessage);
   }
 };
 
-const getVideoIdFromUrl = (): string => {
-  const urlParams = new URLSearchParams(window.location.search);
-  return urlParams.get("v") || "";
-};
+const sendMessage = (): void => {
+  const userInput = document.getElementById("userInput") as HTMLInputElement;
 
-const submitQuery = async (): Promise<void> => {
-  const videoId: string = getVideoIdFromUrl();
-
-  if (!videoId) {
-    displayResponse("Invalid YouTube URL.");
-    return;
-  }
-
-  const userQueryInput = document.getElementById(
-    "userQuery",
-  ) as HTMLInputElement | null;
-  const userQuery = userQueryInput ? userQueryInput.value : "";
-
-  if (userQuery && socket) {
-    socket.send(JSON.stringify({ query: userQuery, video_id: videoId }));
-  } else {
-    displayResponse("Please enter a query.");
+  if (userInput && userInput.value) {
+    socket.emit("send_message", { message: userInput.value });
+    userInput.value = "";
   }
 };
 
-const displayResponse = (message: string): void => {
-  const responseDiv = document.getElementById("response");
-  if (responseDiv) {
-    responseDiv.textContent = message;
+const displayMessage = (message: string): void => {
+  const messagesDiv = document.getElementById("messages");
+  if (messagesDiv) {
+    const messageElement = document.createElement("div");
+    messageElement.textContent = message;
+    messagesDiv.appendChild(messageElement);
   }
 };
 
-// Optional: Close the WebSocket connection when the window is closed/unloaded
+// Optional: Close the Socket.IO connection when the window is closed/unloaded
 window.onunload = (): void => {
   if (socket) {
-    socket.close();
+    socket.disconnect();
   }
 };

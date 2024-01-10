@@ -7,7 +7,8 @@
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
     "outDir": "./dist",
-    "lib": ["ES2015", "dom"]
+    "lib": ["ES2015", "dom"],
+    "moduleResolution": "node"
   },
   "include": ["src/*.ts"],
   "exclude": ["node_modules"]

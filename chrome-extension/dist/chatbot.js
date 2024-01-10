@@ -1,77 +1,48 @@
-"use strict";
 // chatbot.ts
-var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
-    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
-    return new (P || (P = Promise))(function (resolve, reject) {
-        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
-        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
-        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
-        step((generator = generator.apply(thisArg, _arguments || [])).next());
-    });
-};
-// Replace with the WebSocket URL for your chat endpoint
-const SOCKET_ENDPOINT = "wss://dchung.dev/socket.io/";
-let socket = null;
+import io from "socket.io-client";
+// Replace with the Socket.IO server URL
+const SOCKET_IO_ENDPOINT = "https://dchung.dev/socket.io/";
+let socket;
 window.onload = () => {
-    socket = new WebSocket(SOCKET_ENDPOINT);
+    // Initialize Socket.IO connection
+    socket = io(SOCKET_IO_ENDPOINT);
     socket.on("connect", () => {
-        console.log("connected");
+        console.log("Socket.IO connection established");
     });
-    socket.onopen = () => {
-        console.log("WebSocket connection established");
-    };
-    socket.onmessage = (event) => {
-        const data = JSON.parse(event.data);
-        if (data.llm_response) {
-            displayResponse(data.llm_response.data.response);
-            if (data.llm_response.data.done) {
+    socket.on("llm_response", (data) => {
+        if (data) {
+            displayMessage(data.response);
+            if (data.done) {
                 console.log("Chat completed");
             }
         }
-    };
-    socket.onerror = (event) => {
-        console.error("WebSocket error:", event);
-        // Additional logging for debugging
-        if (event instanceof Event) {
-            const errorEvent = event;
-            if (errorEvent.error) {
-                console.error("WebSocket detailed error:", errorEvent.error);
-            }
-        }
-    };
-    const submitButton = document.getElementById("submitQuery");
-    if (submitButton) {
-        submitButton.addEventListener("click", submitQuery);
+    });
+    socket.on("connect_error", (error) => {
+        console.error("Socket.IO connection error:", error);
+    });
+    const sendButton = document.getElementById("sendButton");
+    if (sendButton) {
+        sendButton.addEventListener("click", sendMessage);
     }
 };
-const getVideoIdFromUrl = () => {
-    const urlParams = new URLSearchParams(window.location.search);
-    return urlParams.get("v") || "";
-};
-const submitQuery = () => __awaiter(void 0, void 0, void 0, function* () {
-    const videoId = getVideoIdFromUrl();
-    if (!videoId) {
-        displayResponse("Invalid YouTube URL.");
-        return;
-    }
-    const userQueryInput = document.getElementById("userQuery");
-    const userQuery = userQueryInput ? userQueryInput.value : "";
-    if (userQuery && socket) {
-        socket.send(JSON.stringify({ query: userQuery, video_id: videoId }));
-    }
-    else {
-        displayResponse("Please enter a query.");
-    }
-});
-const displayResponse = (message) => {
-    const responseDiv = document.getElementById("response");
-    if (responseDiv) {
-        responseDiv.textContent = message;
+const sendMessage = () => {
+    const userInput = document.getElementById("userInput");
+    if (userInput && userInput.value) {
+        socket.emit("send_message", { message: userInput.value });
+        userInput.value = "";
     }
 };
-// Optional: Close the WebSocket connection when the window is closed/unloaded
+const displayMessage = (message) => {
+    const messagesDiv = document.getElementById("messages");
+    if (messagesDiv) {
+        const messageElement = document.createElement("div");
+        messageElement.textContent = message;
+        messagesDiv.appendChild(messageElement);
+    }
+};
+// Optional: Close the Socket.IO connection when the window is closed/unloaded
 window.onunload = () => {
     if (socket) {
-        socket.close();
+        socket.disconnect();
     }
 };
