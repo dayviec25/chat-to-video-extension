@@ -1,9 +1,32 @@
 // chatbot.ts
 
-// Add the appropriate URL for your chat endpoint
-const CHAT_ENDPOINT: string = "143.198.107.137:5000/chat";
+// Replace with the WebSocket URL for your chat endpoint
+const SOCKET_ENDPOINT: string =
+  "ws://143.198.107.137:5000/socket.io/?EIO=3&transport=websocket";
+
+let socket: WebSocket | null = null;
 
 window.onload = (): void => {
+  socket = new WebSocket(SOCKET_ENDPOINT);
+
+  socket.onopen = () => {
+    console.log("WebSocket connection established");
+  };
+
+  socket.onmessage = (event) => {
+    const data = JSON.parse(event.data);
+    if (data.llm_response) {
+      displayResponse(data.llm_response.data.response);
+      if (data.llm_response.data.done) {
+        console.log("Chat completed");
+      }
+    }
+  };
+
+  socket.onerror = (error) => {
+    console.error("WebSocket error:", error);
+  };
+
   const submitButton = document.getElementById("submitQuery");
   if (submitButton) {
     submitButton.addEventListener("click", submitQuery);
@@ -28,27 +51,8 @@ const submitQuery = async (): Promise<void> => {
   ) as HTMLInputElement | null;
   const userQuery = userQueryInput ? userQueryInput.value : "";
 
-  if (userQuery) {
-    try {
-      const response: Response = await fetch(CHAT_ENDPOINT, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ video_id: videoId, message: userQuery }),
-      });
-
-      const data: any = await response.json();
-
-      if (response.ok) {
-        displayResponse(data.response);
-      } else {
-        displayResponse(`Error: ${data.error}`);
-      }
-    } catch (error) {
-      console.error("Error:", error);
-      displayResponse("An error occurred while fetching the response.");
-    }
+  if (userQuery && socket) {
+    socket.send(JSON.stringify({ query: userQuery, video_id: videoId }));
   } else {
     displayResponse("Please enter a query.");
   }
@@ -58,5 +62,12 @@ const displayResponse = (message: string): void => {
   const responseDiv = document.getElementById("response");
   if (responseDiv) {
     responseDiv.textContent = message;
+  }
+};
+
+// Optional: Close the WebSocket connection when the window is closed/unloaded
+window.onunload = (): void => {
+  if (socket) {
+    socket.close();
   }
 };

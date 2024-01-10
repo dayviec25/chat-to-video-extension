@@ -1,20 +1,24 @@
 import logging
+import json
+import threading
+from flask import Flask, request, jsonify
+from flask_socketio import SocketIO
 import requests
-from flask import Flask, jsonify, request
 from youtube_transcript_api import YouTubeTranscriptApi, NoTranscriptFound
 
 # Configure Logging
 logging.basicConfig(level=logging.INFO)
 
-# Flask app setup
+# Flask and SocketIO setup
 app = Flask(__name__)
+socketio = SocketIO(app)
 
 def fetch_youtube_transcript(video_id):
     """
     Fetches the transcript for a given YouTube video ID.
 
     Args:
-        video_id (str): The ID of the YouTube video.
+        video_id (str): The YouTube video ID.
 
     Returns:
         dict or None: The transcript data if found, otherwise None.
@@ -28,55 +32,71 @@ def fetch_youtube_transcript(video_id):
         logging.warning(f"No transcript found for video: {video_id}")
         return None
 
-@app.route('/chat', methods=['POST'])
-def chat_with_video_content():
+@app.route('/start_chat', methods=['POST'])
+def start_chat():
     """
-    Endpoint to chat with video content. Expects a JSON payload with 'video_id' and 'message'.
+    Endpoint to start a chat with video content. Expects a JSON payload with 'video_id'.
 
     Returns:
-        Flask Response: JSON response with the result or error message.
+        Flask Response: JSON response indicating chat initialization status.
     """
     content = request.json
     video_id = content.get("video_id")
-    user_query = content.get("message")
 
-    if not video_id or not user_query:
-        return jsonify({"error": "Missing video ID or message"}), 400
+    if not video_id:
+        return jsonify({"error": "Missing video ID"}), 400
 
     transcript = fetch_youtube_transcript(video_id)
     if transcript is None:
         return jsonify({"error": "Transcript not found"}), 404
 
-    llm_response = query_mistral_llm(transcript, user_query)
-    return jsonify({"response": llm_response})
+    # Store the transcript in the session or pass it to the client to send with each message
+    # This is a placeholder, adapt according to your application's architecture
+    # You might want to send it back to the client or store it in a session or database
 
-def query_mistral_llm(transcript, user_query):
+    return jsonify({"message": "Chat initialized", "transcript": transcript})
+
+def query_mistral_llm(transcript, user_query, sid):
     """
-    Queries the Mistral LLM with the transcript and user query.
+    Queries the Mistral LLM with the transcript and user query, streaming the response via WebSocket.
 
     Args:
         transcript (list): The video transcript.
         user_query (str): The user's query.
-
-    Returns:
-        str: The response from the LLM.
+        sid (str): The SocketIO session ID.
     """
-    # Convert the transcript list to a string
     transcript_str = ' '.join([segment['text'] for segment in transcript])
-
     prompt = ("Context: You are a video chat bot and video guide for users. "
               "Answer anything about the video to the best of your knowledge. "
               "Transcript: " + transcript_str + " Question: " + user_query)
-    payload = {"model": "mistral", "prompt": prompt, "stream": False}
+    payload = {"model": "mistral", "prompt": prompt, "stream": True}
 
     try:
-        response = requests.post("http://127.0.0.1:11434/api/generate", json=payload)
+        response = requests.post("http://127.0.0.1:11434/api/generate", json=payload, stream=True)
         response.raise_for_status()
-        return response.text
+        for line in response.iter_lines():
+            if line:
+                decoded_line = line.decode('utf-8')
+                json_data = json.loads(decoded_line)
+                socketio.emit('llm_response', {'data': json_data}, room=sid)
+                if json_data.get("done"):
+                    break
     except requests.RequestException as e:
         logging.error(f"Error querying Mistral LLM: {e}")
-        return "An error occurred while processing the request."
+        socketio.emit('llm_response', {'error': "An error occurred.", 'done': True}, room=sid)
 
-# Run Flask app
+@socketio.on('send_message')
+def handle_send_message(message):
+    """
+    WebSocket event to handle incoming messages from the client.
+
+    Args:
+        message (dict): The message from the client containing the user query and transcript.
+    """
+    sid = request.sid
+    user_query = message['query']
+    transcript = message['transcript']  # Assuming the transcript is sent with each message
+    threading.Thread(target=query_mistral_llm, args=(transcript, user_query, sid)).start()
+
 if __name__ == "__main__":
-    app.run(debug=True, host='0.0.0.0', port=5000)
+    socketio.run(app, debug=True, host='0.0.0.0', port=5000)
