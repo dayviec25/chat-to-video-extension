@@ -2,7 +2,7 @@ import logging
 import json
 import threading
 from flask import Flask, request, jsonify
-from flask_socketio import SocketIO
+from flask_socketio import SocketIO, emit
 import requests
 from youtube_transcript_api import YouTubeTranscriptApi, NoTranscriptFound
 
@@ -99,4 +99,7 @@ def handle_send_message(message):
     threading.Thread(target=query_mistral_llm, args=(transcript, user_query, sid)).start()
 
 if __name__ == "__main__":
-    socketio.run(app, debug=True, host='0.0.0.0', port=5000)
+    certfile = '/etc/letsencrypt/live/dchung.dev/fullchain.pem'
+    keyfile = '/etc/letsencrypt/live/dchung.dev/privkey.pem'
+    socketio.run(app, debug=True, host='0.0.0.0', port=5000, keyfile=keyfile, certfile=certfile)
+

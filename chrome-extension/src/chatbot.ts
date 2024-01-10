@@ -2,7 +2,7 @@
 
 // Replace with the WebSocket URL for your chat endpoint
 const SOCKET_ENDPOINT: string =
-  "ws://143.198.107.137:5000/socket.io/?EIO=3&transport=websocket";
+  "wss://dchung.dev/socket.io/?EIO=3&transport=websocket";
 
 let socket: WebSocket | null = null;
 
