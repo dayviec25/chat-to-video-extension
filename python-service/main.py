@@ -2,7 +2,7 @@ import logging
 import json
 import threading
 from flask import Flask, request, jsonify
-from flask_socketio import SocketIO
+from flask_socketio import SocketIO, emit
 from flask_cors import CORS
 import requests
 from youtube_transcript_api import YouTubeTranscriptApi, NoTranscriptFound
@@ -37,6 +37,10 @@ def fetch_youtube_transcript(video_id):
 @app.route('/')
 def index():
     return "Flask-SocketIO Server is running!"
+
+@socketio.on("connect")
+def handle_connect():
+    print("Client connected!")
 
 @app.route('/start_chat', methods=['POST'])
 def start_chat():
