@@ -10,6 +10,8 @@ ENV PATH="/home/appuser/venv/bin:$PATH"
 COPY python-service/ .
 RUN pip install --no-cache-dir -r requirements.txt
 
+RUN pip install gunicorn eventlet
+
 EXPOSE 5000
 
-CMD ["/home/appuser/venv/bin/gunicorn", "-b", "0.0.0.0:5000", "main:app"]
+CMD ["/home/appuser/venv/bin/gunicorn", "-k", "eventlet", "-w", "1", "-b", "0.0.0.0:5000", "main:app"]
