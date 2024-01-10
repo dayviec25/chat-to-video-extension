@@ -32,6 +32,10 @@ def fetch_youtube_transcript(video_id):
         logging.warning(f"No transcript found for video: {video_id}")
         return None
 
+@app.route('/')
+def index():
+    return "Flask-SocketIO Server is running!"
+
 @app.route('/start_chat', methods=['POST'])
 def start_chat():
     """
